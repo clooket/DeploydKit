@@ -93,7 +93,11 @@
 
 + (void)fileExists:(NSString *)fileName inBackgroundWithBlock:(void (^)(BOOL exists, NSError *error))block {
   block = [block copy];
-  dispatch_queue_t q = dispatch_get_current_queue();
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 60000
+	dispatch_queue_t q = [NSThread isMainThread] ? dispatch_get_main_queue() : dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0);
+#else
+	dispatch_queue_t q = dispatch_get_current_queue();
+#endif
   dispatch_async([DKManager queue], ^{
     NSError *error = nil;
     BOOL exists = [self fileExists:fileName error:&error];
@@ -128,12 +132,16 @@
 }
 
 - (BOOL)delete:(NSError **)error {
-  return [isa deleteFile:self.name error:error];
+  return [[self class] deleteFile:self.name error:error];
 }
 
 - (void)deleteInBackgroundWithBlock:(void (^)(BOOL success, NSError *error))block {
   block = [block copy];
-  dispatch_queue_t q = dispatch_get_current_queue();
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 60000
+	dispatch_queue_t q = [NSThread isMainThread] ? dispatch_get_main_queue() : dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0);
+#else
+	dispatch_queue_t q = dispatch_get_current_queue();
+#endif
   dispatch_async([DKManager queue], ^{
     NSError *error = nil;
     BOOL success = [self delete:&error];
